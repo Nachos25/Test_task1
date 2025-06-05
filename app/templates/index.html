@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASO Конкурентний Аналіз</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ASO Конкурентний Аналіз</h1>
+        <form id="search-form">
+            <input type="text" name="query" id="query" placeholder="Введіть назву або лінк на додаток..." required autocomplete="off">
+            <select name="platform" id="platform">
+                <option value="ios">iOS</option>
+                <option value="android">Android</option>
+            </select>
+            <button type="submit" title="Знайти"><span style="font-size:1.3em;">🔍</span></button>
+        </form>
+        <div id="results"></div>
+    </div>
+    <script>
+    document.getElementById('search-form').onsubmit = async function(e) {
+        e.preventDefault();
+        const query = document.getElementById('query').value;
+        const platform = document.getElementById('platform').value;
+        document.getElementById('results').innerHTML = 'Завантаження...';
+        const resp = await fetch(`/analyze?query=${encodeURIComponent(query)}&platform=${platform}`);
+        let data = null;
+        try {
+            data = await resp.json();
+        } catch (err) {
+            document.getElementById('results').innerHTML = `<div class='error'>Помилка сервера</div>`;
+            return;
+        }
+        if (data.error) {
+            document.getElementById('results').innerHTML = `<div class='error'>${data.error}</div>`;
+            return;
+        }
+        let html = `<h2>${data.app.app_name}</h2>`;
+        html += `<p>Кількість індексованих ключів: <b>${data.keywords_count}</b></p>`;
+        html += `<p>Трафік додатку: <b>${data.traffic}</b></p>`;
+        html += `<h3>Конкуренти</h3>`;
+        html += `<ul>`;
+        for (const comp of data.competitors) {
+            html += `<li><b>${comp.app_name}</b> — ключів: ${comp.keywords_count}, трафік: ${comp.traffic}</li>`;
+        }
+        html += `</ul>`;
+        html += `<p>Середнє по конкурентам: <b>${data.avg_keywords}</b> ключів, <b>${data.avg_traffic}</b> трафік</p>`;
+        html += `<p>Найкращий конкурент: <b>${data.competitors[0].app_name}</b> (${data.max_keywords} ключів, ${data.max_traffic} трафік)</p>`;
+        html += `<p>Різниця у трафіку: <b>${data.traffic_loss}</b></p>`;
+        document.getElementById('results').innerHTML = html;
+    }
+    </script>
+</body>
+</html> 
